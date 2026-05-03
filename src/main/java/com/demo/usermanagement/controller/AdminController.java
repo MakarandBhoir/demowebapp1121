@@ -30,6 +30,7 @@ import java.util.Map;
 @RestController
 @RequestMapping("/admin")
 @Tag(name = "Admin (Vulnerable Demo)", description = "Intentionally vulnerable admin endpoints for demo purposes")
+@CrossOrigin(origins = "*") // TODO: Restrict CORS in production
 public class AdminController {
 
     private static final Logger logger = LoggerFactory.getLogger(AdminController.class);

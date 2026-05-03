@@ -19,6 +19,7 @@ import java.util.Optional;
 @RestController
 @RequestMapping("/users")
 @Tag(name = "User Management", description = "CRUD operations for users")
+@CrossOrigin(origins = "*") // TODO: Restrict CORS in production
 public class UserController {
 
     private static final Logger logger = LoggerFactory.getLogger(UserController.class);
