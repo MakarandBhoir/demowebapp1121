@@ -1,9 +1,11 @@
 package com.demo.usermanagement.controller;
 
+import com.demo.usermanagement.exception.UserNotFoundException;
 import com.demo.usermanagement.model.User;
 import com.demo.usermanagement.service.UserService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.Valid;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -12,10 +14,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
-import java.util.Optional;
 
-// TODO: Add proper input validation with @Valid and Bean Validation
-// TODO: Add global exception handler (@ControllerAdvice)
 @RestController
 @RequestMapping("/users")
 @Tag(name = "User Management", description = "CRUD operations for users")
@@ -30,9 +29,8 @@ public class UserController {
 
     @Operation(summary = "Create a new user")
     @PostMapping
-    public ResponseEntity<User> createUser(@RequestBody User user) {
+    public ResponseEntity<User> createUser(@Valid @RequestBody User user) {
         logger.info("POST /users - Creating user: {}", user.getEmail());
-        // TODO: No exception handling - any error results in 500
         User created = userService.createUser(user);
         return ResponseEntity.status(HttpStatus.CREATED).body(created);
     }
@@ -49,17 +47,15 @@ public class UserController {
     @GetMapping("/{id}")
     public ResponseEntity<User> getUserById(@PathVariable Long id) {
         logger.info("GET /users/{} - Fetching user", id);
-        Optional<User> user = userService.getUserById(id);
-        // TODO: Return 404 with proper error body, not just status
-        return user.map(ResponseEntity::ok)
-                .orElse(ResponseEntity.notFound().build());
+        User user = userService.getUserById(id)
+                .orElseThrow(() -> new UserNotFoundException(id));
+        return ResponseEntity.ok(user);
     }
 
     @Operation(summary = "Update user by ID")
     @PutMapping("/{id}")
-    public ResponseEntity<User> updateUser(@PathVariable Long id, @RequestBody User user) {
+    public ResponseEntity<User> updateUser(@PathVariable Long id, @Valid @RequestBody User user) {
         logger.info("PUT /users/{} - Updating user", id);
-        // TODO: No exception handling - RuntimeException from service results in 500
         User updated = userService.updateUser(id, user);
         return ResponseEntity.ok(updated);
     }
@@ -72,3 +68,4 @@ public class UserController {
         return ResponseEntity.noContent().build();
     }
 }
+

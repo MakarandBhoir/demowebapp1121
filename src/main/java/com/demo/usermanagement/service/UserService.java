@@ -1,5 +1,7 @@
 package com.demo.usermanagement.service;
 
+import com.demo.usermanagement.exception.DuplicateEmailException;
+import com.demo.usermanagement.exception.UserNotFoundException;
 import com.demo.usermanagement.model.User;
 import com.demo.usermanagement.repository.UserRepository;
 import jakarta.persistence.EntityManager;
@@ -33,32 +35,19 @@ public class UserService {
     public User createUser(User user) {
         logger.info("Creating user with email: {}", user.getEmail());
 
-        // TECHNICAL DEBT: Duplicate validation logic (also in updateUser)
-        if (user.getName() == null || user.getName().isEmpty()) {
-            logger.warn("Attempted to create user with empty name");
-            throw new RuntimeException("Name cannot be empty");
+        if (user.getRole() == null || user.getRole().isBlank()) {
+            user.setRole("USER");
         }
-        if (user.getEmail() == null || user.getEmail().isEmpty()) {
-            logger.warn("Attempted to create user with empty email");
-            throw new RuntimeException("Email cannot be empty");
-        }
-        if (user.getPassword() == null || user.getPassword().isEmpty()) {
-            throw new RuntimeException("Password cannot be empty");
+
+        if (userRepository.findByEmail(user.getEmail()).isPresent()) {
+            throw new DuplicateEmailException(user.getEmail());
         }
 
         // VULNERABILITY: No password encoding
         // TODO: userService.setPassword(passwordEncoder.encode(user.getPassword()));
 
-        if (user.getRole() == null || user.getRole().isEmpty()) {
-            user.setRole("USER");
-        }
-
-        // TECHNICAL DEBT: No check for duplicate emails before save - relies on DB
-        // constraint
         User saved = userRepository.save(user);
         logger.info("User created with id: {}", saved.getId());
-
-        // TECHNICAL DEBT: Duplicated post-save logging (also in updateUser)
         logger.debug("User details after save: name={}, email={}, role={}", saved.getName(), saved.getEmail(),
                 saved.getRole());
 
@@ -76,7 +65,6 @@ public class UserService {
 
     public Optional<User> getUserById(Long id) {
         logger.info("Fetching user by id: {}", id);
-        // TODO: Throw custom NotFoundException instead of returning Optional
         return userRepository.findById(id);
     }
 
@@ -84,22 +72,13 @@ public class UserService {
     public User updateUser(Long id, User updatedUser) {
         logger.info("Updating user with id: {}", id);
 
-        // TECHNICAL DEBT: Duplicate validation logic (same as in createUser)
-        if (updatedUser.getName() == null || updatedUser.getName().isEmpty()) {
-            logger.warn("Attempted to update user with empty name");
-            throw new RuntimeException("Name cannot be empty");
-        }
-        if (updatedUser.getEmail() == null || updatedUser.getEmail().isEmpty()) {
-            logger.warn("Attempted to update user with empty email");
-            throw new RuntimeException("Email cannot be empty");
-        }
-        if (updatedUser.getPassword() == null || updatedUser.getPassword().isEmpty()) {
-            throw new RuntimeException("Password cannot be empty");
-        }
-
-        // TODO: Throw NotFoundException if user not found
         User existing = userRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("User not found with id: " + id));
+                .orElseThrow(() -> new UserNotFoundException(id));
+
+        if (!existing.getEmail().equalsIgnoreCase(updatedUser.getEmail())
+                && userRepository.findByEmail(updatedUser.getEmail()).isPresent()) {
+            throw new DuplicateEmailException(updatedUser.getEmail());
+        }
 
         existing.setName(updatedUser.getName());
         existing.setEmail(updatedUser.getEmail());
@@ -109,8 +88,6 @@ public class UserService {
 
         User saved = userRepository.save(existing);
         logger.info("User updated with id: {}", saved.getId());
-
-        // TECHNICAL DEBT: Duplicated post-save logging (also in createUser)
         logger.debug("User details after save: name={}, email={}, role={}", saved.getName(), saved.getEmail(),
                 saved.getRole());
 
@@ -119,7 +96,9 @@ public class UserService {
 
     public void deleteUser(Long id) {
         logger.info("Deleting user with id: {}", id);
-        // TODO: Check existence before delete, throw NotFoundException if missing
+        if (!userRepository.existsById(id)) {
+            throw new UserNotFoundException(id);
+        }
         userRepository.deleteById(id);
         logger.info("User deleted with id: {}", id);
     }
@@ -166,3 +145,4 @@ public class UserService {
         return userRepository.findAll();
     }
 }
+

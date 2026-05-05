@@ -1,8 +1,10 @@
 package com.demo.usermanagement.model;
 
 import jakarta.persistence.*;
+import jakarta.validation.constraints.Email;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Size;
 
-// TODO: Add validation annotations
 // TODO: Consider separating DTO from entity
 @Entity
 @Table(name = "users")
@@ -12,15 +14,20 @@ public class User {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    // TODO: Add @NotBlank validation
+    @NotBlank(message = "Name is required")
+    @Size(min = 2, max = 100, message = "Name must be between 2 and 100 characters")
     @Column(nullable = false)
     private String name;
 
+    @NotBlank(message = "Email is required")
+    @Email(message = "Email must be a valid email address")
     @Column(nullable = false, unique = true)
     private String email;
 
     // VULNERABILITY: Password stored in plain text - no encoding
     // TODO: Use BCryptPasswordEncoder
+    @NotBlank(message = "Password is required")
+    @Size(min = 6, message = "Password must be at least 6 characters")
     @Column(nullable = false)
     private String password;
 
