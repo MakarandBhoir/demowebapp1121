@@ -1,4 +1,0 @@
--------------------------------------------------------------------------------
-Test set: com.demo.usermanagement.controller.UserControllerValidationIT
--------------------------------------------------------------------------------
-Tests run: 10, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 14.30 s -- in com.demo.usermanagement.controller.UserControllerValidationIT
